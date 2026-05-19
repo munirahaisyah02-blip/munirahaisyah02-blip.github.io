@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SFP: Agro Product Tech - Growth Derivative Tool</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h1 { color: #2e7d32; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px; }
+        .formula-box { background: #e8f5e9; padding: 15px; border-left: 5px solid #2e7d32; margin: 20px 0; font-family: 'Courier New', Courier, monospace; }
+        .explanation { line-height: 1.6; font-size: 0.95rem; }
+        #info-panel { margin-top: 20px; padding: 15px; border-radius: 8px; background: #fff3e0; border: 1px solid #ffe0b2; display: none; }
+        canvas { cursor: crosshair; }
+        .source-link { font-size: 0.8rem; color: #666; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Broiler Growth & Derivative Analysis</h1>
+    <p class="explanation">
+        In Malaysian poultry production, we model the growth of broiler chickens (e.g., <strong>Ross 308</strong>) using a 
+        <strong>Logistic Growth Function</strong>. For an Agro Product Tech student, the 1st derivative is vital because 
+        it identifies the <em>Point of Inflection</em>—the age where growth rate peaks before slowing down. 
+    </p>
+
+    <div class="formula-box">
+        <strong>Growth Function:</strong> f(t) = K / (1 + e<sup>-r(t - t₀)</sup>)<br>
+        <strong>Derivative (Rate):</strong> f'(t) = r · f(t) · (1 - f(t)/K)
+    </div>
+
+    <canvas id="growthChart" width="800" height="400"></canvas>
+
+    <div id="info-panel">
+        <h3 id="panel-title">Analysis at Day X</h3>
+        <p id="panel-desc"></p>
+    </div>
+
+    <p class="source-link">
+        Data Model based on: <em>Malaysian Journal of Animal Science & Department of Veterinary Services (DVS) Malaysia Broiler Performance Standards.</em>
+    </p>
+</div>
+
+<script>
+    // Logistic Parameters for a standard Malaysian Broiler (42-day cycle)
+    const K = 2800;  // Carrying capacity (Target slaughter weight in grams)
+    const r = 0.18;  // Growth rate coefficient
+    const t0 = 24;   // Mid-point (Inflection point in days)
+
+    // Generate Data
+    const days = Array.from({length: 43}, (_, i) => i);
+    const weightData = days.map(t => K / (1 + Math.exp(-r * (t - t0))));
+    const growthRateData = days.map(t => {
+        const wt = K / (1 + Math.exp(-r * (t - t0)));
+        return r * wt * (1 - wt / K);
+    });
+
+    const ctx = document.getElementById('growthChart').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: days,
+            datasets: [
+                {
+                    label: 'Cumulative Weight f(t) [grams]',
+                    data: weightData,
+                    borderColor: '#2e7d32',
+                    backgroundColor: 'rgba(46, 125, 50, 0.1)',
+                    yAxisID: 'y',
+                    fill: true,
+                    tension: 0.4
+                },
+                {
+                    label: 'Growth Rate f\'(t) [g/day]',
+                    data: growthRateData,
+                    borderColor: '#f57c00',
+                    borderDash: [5, 5],
+                    yAxisID: 'y1',
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+                y: { type: 'linear', position: 'left', title: { display: true, text: 'Weight (g)' } },
+                y1: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Growth Rate (g/day)' } },
+                x: { title: { display: true, text: 'Days Since Hatch' } }
+            },
+            plugins: {
+                tooltip: { enabled: true }
+            },
+            onClick: (e) => {
+                const points = chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, true);
+                if (points.length) {
+                    const index = points[0].index;
+                    const day = days[index];
+                    const weight = weightData[index].toFixed(2);
+                    const rate = growthRateData[index].toFixed(2);
+                    
+                    updatePanel(day, weight, rate);
+                }
+            }
+        }
+    });
+
+    function updatePanel(day, weight, rate) {
+        const panel = document.getElementById('info-panel');
+        const title = document.getElementById('panel-title');
+        const desc = document.getElementById('panel-desc');
+        
+        panel.style.display = 'block';
+        title.innerText = `Day ${day}: Growth Dynamics`;
+        
+        let explanation = "";
+        if (day < 15) {
+            explanation = "Early Phase: The bird is building its skeletal framework. The growth rate f'(t) is increasing exponentially.";
+        } else if (day >= 22 && day <= 26) {
+            explanation = "Peak Efficiency: This is the inflection point. The derivative is at its maximum! The bird is converting feed to muscle at the highest possible rate.";
+        } else {
+            explanation = "Maturation Phase: The growth rate f'(t) is declining. The bird is reaching slaughter weight, and each extra gram of gain requires more feed (Lower FCR).";
+        }
+
+        desc.innerHTML = `<strong>Weight:</strong> ${weight}g <br> 
+                          <strong>Rate of Change [f'(t)]:</strong> ${rate} g/day <br><br>
+                          <em>Insight: ${explanation}</em>`;
+    }
+</script>
+
+</body>
+</html>
