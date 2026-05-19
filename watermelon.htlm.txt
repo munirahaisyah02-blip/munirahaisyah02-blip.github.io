@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Watermelon Sweetness Derivative</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #f0fdf4; padding: 20px; color: #166534; }
+        .card { max-width: 800px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .formula { background: #dcfce7; padding: 15px; border-radius: 8px; font-family: monospace; margin: 15px 0; }
+        #display { margin-top: 20px; padding: 15px; border: 2px solid #22c55e; border-radius: 10px; background: #f9fafb; min-height: 50px; }
+        h2 { margin-top: 0; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>🍉 Watermelon Ripening Tracker (Brix %)</h2>
+    <p>This graph shows how sugar develops as the watermelon grows. <strong>Click the graph</strong> to see the derivative (the speed of sweetening).</p>
+
+    <div class="formula">
+        Sweetness: f(x) [Brix %] <br>
+        Speed of Sweetening: f'(x) [Brix change per day]
+    </div>
+
+    <canvas id="ripeningChart"></canvas>
+
+    <div id="display">
+        <strong>Click a point on the line to analyze the ripening speed!</strong>
+    </div>
+</div>
+
+<script>
+    // Realistic data for a 45-day ripening cycle
+    const days = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45];
+    const brix = [2, 2.5, 3.5, 5, 7.5, 10.5, 12, 13, 13.5, 13.6]; // Cumulative Sugar
+
+    // Simple derivative calculation: (Sugar2 - Sugar1) / (Day2 - Day1)
+    const rates = brix.map((val, i) => {
+        if (i === 0) return 0;
+        return (val - brix[i-1]) / (days[i] - days[i-1]);
+    });
+
+    const ctx = document.getElementById('ripeningChart').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: days,
+            datasets: [{
+                label: 'Sugar Content (Brix %)',
+                data: brix,
+                borderColor: '#16a34a',
+                backgroundColor: 'rgba(22, 163, 74, 0.2)',
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            onClick: (e) => {
+                const points = chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, true);
+                if (points.length) {
+                    const i = points[0].index;
+                    const d = days[i];
+                    const s = brix[i];
+                    const r = rates[i].toFixed(2);
+                    
+                    let explain = "";
+                    if (r > 0.5) explain = "<strong>Fast Sweetening!</strong> The plant is pumping sugar into the fruit rapidly.";
+                    else if (d > 35) explain = "<strong>Slowing Down.</strong> The fruit is almost at max sweetness. Harvest soon!";
+                    else explain = "<strong>Early Stage.</strong> Mainly water and fiber growth, not much sugar yet.";
+
+                    document.getElementById('display').innerHTML = `
+                        <strong>Day ${d}:</strong> Sugar is ${s}% Brix. <br>
+                        <strong>Derivative f'(x):</strong> ${r} Brix/day. <br>
+                        <em>Summary: ${explain}</em>
+                    `;
+                }
+            }
+        }
+    });
+</script>
+</body>
+</html>
