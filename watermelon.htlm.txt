@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watermelon Brix Rate Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #fff5f5; color: #2d3436; padding: 20px; line-height: 1.6; }
+        .app-card { max-width: 850px; margin: auto; background: white; border-radius: 20px; padding: 40px; box-shadow: 0 10px 30px rgba(214, 48, 49, 0.15); border-top: 8px solid #ff7675; }
+        h1 { color: #d63031; margin-top: 0; }
+        .formula-zone { background: #ffeaa7; padding: 20px; border-radius: 12px; margin-bottom: 25px; font-family: 'Courier New', monospace; font-weight: bold; }
+        .result-box { margin-top: 25px; padding: 20px; background: #fab1a0; border-radius: 12px; min-height: 80px; transition: all 0.3s ease; }
+        .badge { background: #d63031; color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.8em; text-transform: uppercase; }
+        canvas { background: #fff; border-radius: 8px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="app-card">
+    <h1>Watermelon Sweetness Analysis <span class="badge">AgroTech Lab</span></h1>
+    <p>Using calculus to track sugar accumulation in <strong>Red-Fleshed Citrullus lanatus</strong>. Click the graph to analyze the ripening velocity at any stage of the 30-day ripening window.</p>
+
+    <div class="formula-zone">
+        Brix Concentration: $f(x) = -0.01x^2 + 0.6x + 3$ <br>
+        Sugar Velocity: $f'(x) = -0.02x + 0.6$
+    </div>
+
+    <canvas id="brixChart" height="150"></canvas>
+
+    <div id="result" class="result-box">
+        <strong>Status: Ready for sampling.</strong><br>
+        Click a data point on the ripening curve above to view the derivative analysis.
+    </div>
+
+    <p style="font-size: 0.85em; color: #636e72;">
+        <strong>Reference:</strong> Realistic sugar accumulation curves for tropical seedless varieties (Brix range 8-13%). Data inspired by <em>MARDI (Malaysian Agricultural Research and Development Institute)</em> fruit quality standards.
+    </p>
+</div>
+
+<script>
+    const ctx = document.getElementById('brixChart').getContext('2d');
+    
+    // x = Days into the ripening phase (0 to 30)
+    const days = Array.from({length: 31}, (_, i) => i);
+    // f(x) = Brix value
+    const brixData = days.map(x => (-0.01 * Math.pow(x, 2) + 0.6 * x + 3).toFixed(2));
+
+    const myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: days,
+            datasets: [{
+                label: 'Sweetness (Degrees Brix)',
+                data: brixData,
+                borderColor: '#d63031',
+                backgroundColor: 'rgba(255, 118, 117, 0.2)',
+                pointBackgroundColor: '#d63031',
+                pointHoverRadius: 8,
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { title: { display: true, text: 'Days of Ripening Phase' } },
+                y: { 
+                    min: 0, 
+                    max: 15,
+                    title: { display: true, text: 'Brix Content (°Bx)' } 
+                }
+            },
+            onClick: (evt) => {
+                const points = myChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+                if (points.length) {
+                    const i = points[0].index;
+                    const day = days[i];
+                    const brix = brixData[i];
+                    
+                    // Derivative f'(x) = -0.02x + 0.6
+                    const rate = (-0.02 * day + 0.6).toFixed(3);
+                    
+                    displayAnalysis(day, brix, rate);
+                }
+            }
+        }
+    });
+
+    function displayAnalysis(day, brix, rate) {
+        const res = document.getElementById('result');
+        let comment = "";
+
+        if (rate > 0.4) {
+            comment = "<strong>Active Synthesis:</strong> Sugar is pumping into the fruit rapidly. Do not harvest yet; the flavor is still developing.";
+        } else if (rate > 0.1) {
+            comment = "<strong>Peak Sweetness Approaching:</strong> The accumulation is slowing down. Sugar levels are near maximum. Ideal for premium market harvest.";
+        } else if (rate > 0) {
+            comment = "<strong>Full Maturity:</strong> Minimal sugar gain remaining. Harvest immediately to ensure crisp texture before the flesh softens.";
+        } else {
+            comment = "<strong>Overripe/Senescence:</strong> Sugar levels are actually dropping due to metabolic breakdown. Quality is degrading.";
+        }
+
+        res.innerHTML = `
+            <strong>Analysis - Day ${day}:</strong> Sugar Content is <strong>${brix}°Bx</strong>.<br>
+            <strong>Derivative f'(${day}):</strong> ${rate} °Bx per day.<br>
+            <em>Agro-Tech Note:</em> ${comment}
+        `;
+        res.style.background = "#55efc4"; // Flash green on update
+        setTimeout(() => { res.style.background = "#fab1a0"; }, 500);
+    }
+</script>
+
+</body>
+</html>
