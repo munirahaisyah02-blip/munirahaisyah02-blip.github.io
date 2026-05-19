@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgroTech: Integral Loss Calculator</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { --primary: #2980b9; --success: #27ae60; --warning: #f39c12; --dark: #2c3e50; }
+        body { font-family: 'Inter', sans-serif; background: #f4f7f6; color: var(--dark); padding: 20px; }
+        .wrapper { max-width: 900px; margin: auto; background: white; border-radius: 12px; padding: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        .header-box { border-bottom: 2px solid #eee; margin-bottom: 20px; padding-bottom: 10px; }
+        .integral-formula { background: #fff3e0; padding: 15px; border-radius: 8px; border-left: 5px solid var(--warning); margin: 20px 0; font-family: 'Cambria', serif; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .stat-card { background: var(--dark); color: white; padding: 15px; border-radius: 8px; text-align: center; }
+        .stat-card span { display: block; font-size: 1.5rem; font-weight: bold; color: var(--success); }
+        canvas { background: #fff; border: 1px solid #eee; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <div class="header-box">
+        <h1>Nutrient Accumulation Analysis</h1>
+        <p>Using <strong>Definite Integrals</strong> to calculate the total Vitamin C lost during the Malaysian blanching process.</p>
+    </div>
+
+    <div class="integral-formula">
+        <strong>The Integration Task:</strong><br>
+        To find the total percentage lost from time $0$ to $t$: <br>
+        $\text{Total Loss} = \int_{0}^{t} 2e^{-0.02x} \, dx = [-100e^{-0.02x}]_{0}^{t}$
+    </div>
+
+    <canvas id="integralChart" height="120"></canvas>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            Time (s)
+            <span id="stat-time">0</span>
+        </div>
+        <div class="stat-card">
+            Current Retention
+            <span id="stat-retention">100%</span>
+        </div>
+        <div class="stat-card" style="border: 2px solid var(--warning);">
+            Total Lost (Integral)
+            <span id="stat-loss" style="color: #ff7675;">0%</span>
+        </div>
+    </div>
+
+    <div style="margin-top: 20px; padding: 15px; background: #e8f4fd; border-radius: 8px; font-size: 0.9rem;">
+        <strong>Bioscience Insight:</strong> The "Total Lost" value above is the physical manifestation of the 1st Fundamental Theorem of Calculus. It represents the cumulative damage caused by thermal energy over the entire duration.
+    </div>
+</div>
+
+<script>
+    const ctx = document.getElementById('integralChart').getContext('2d');
+    const labels = Array.from({length: 101}, (_, i) => i);
+    const dataPoints = labels.map(x => (100 * Math.exp(-0.02 * x)).toFixed(2));
+
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Vitamin C Retention (%)',
+                data: dataPoints,
+                borderColor: '#2980b9',
+                backgroundColor: 'rgba(41, 128, 185, 0.2)',
+                fill: 'origin', // This visualizes the Area Under the Curve
+                tension: 0.3,
+                pointRadius: 0,
+                pointHoverRadius: 5
+            }]
+        },
+        options: {
+            interaction: { mode: 'index', intersect: false },
+            plugins: { 
+                tooltip: { enabled: false },
+                legend: { display: false }
+            },
+            scales: {
+                y: { min: 0, max: 100, title: { display: true, text: 'Vitamin C %' } },
+                x: { title: { display: true, text: 'Seconds in Blancher' } }
+            },
+            onClick: (e) => {
+                const points = chart.getElementsAtEventForMode(e, 'index', { intersect: false }, true);
+                if (points.length) {
+                    const x = points[0].index;
+                    calculateIntegral(x);
+                }
+            }
+        }
+    });
+
+    function calculateIntegral(t) {
+        const retention = parseFloat(dataPoints[t]);
+        // Total Loss = Initial (100) - Current Retention
+        const totalLoss = (100 - retention).toFixed(2);
+        
+        document.getElementById('stat-time').innerText = t;
+        document.getElementById('stat-retention').innerText = retention + "%";
+        document.getElementById('stat-loss').innerText = totalLoss + "%";
+        
+        // Visual feedback on the stat card
+        const lossCard = document.getElementById('stat-loss').parentElement;
+        lossCard.style.transform = "scale(1.05)";
+        setTimeout(() => lossCard.style.transform = "scale(1)", 200);
+    }
+</script>
+
+</body>
+</html>
