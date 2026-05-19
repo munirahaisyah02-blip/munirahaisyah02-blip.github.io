@@ -3,132 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SFP: Agro Product Tech - Growth Derivative Tool</title>
+    <title>AgroTech: Oil Palm FFB Derivative Analysis</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; color: #333; margin: 0; padding: 20px; }
-        .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h1 { color: #2e7d32; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px; }
-        .formula-box { background: #e8f5e9; padding: 15px; border-left: 5px solid #2e7d32; margin: 20px 0; font-family: 'Courier New', Courier, monospace; }
-        .explanation { line-height: 1.6; font-size: 0.95rem; }
-        #info-panel { margin-top: 20px; padding: 15px; border-radius: 8px; background: #fff3e0; border: 1px solid #ffe0b2; display: none; }
-        canvas { cursor: crosshair; }
-        .source-link { font-size: 0.8rem; color: #666; margin-top: 10px; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: #fafafa; color: #1a2e1a; padding: 20px; }
+        .app-card { max-width: 950px; margin: auto; background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,40,0,0.08); }
+        h1 { color: #1b5e20; font-size: 1.8rem; margin-bottom: 8px; }
+        .formula { background: #f1f8e9; padding: 15px; border-radius: 8px; font-family: serif; font-style: italic; margin: 20px 0; border-left: 4px solid #4caf50; }
+        #analysis-box { margin-top: 25px; padding: 20px; border-radius: 12px; background: #e3f2fd; border: 1px solid #bbdefb; min-height: 80px; transition: all 0.3s ease; }
+        .meta { font-size: 0.85rem; color: #666; font-style: italic; margin-top: 15px; }
+        canvas { margin-top: 20px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>Broiler Growth & Derivative Analysis</h1>
-    <p class="explanation">
-        In Malaysian poultry production, we model the growth of broiler chickens (e.g., <strong>Ross 308</strong>) using a 
-        <strong>Logistic Growth Function</strong>. For an Agro Product Tech student, the 1st derivative is vital because 
-        it identifies the <em>Point of Inflection</em>—the age where growth rate peaks before slowing down. 
-    </p>
+<div class="app-card">
+    <h1>FFB Oil Synthesis Dynamics</h1>
+    <p>As an Agro Product Tech student, you know that <strong>mesocarp oil accumulation</strong> is non-linear. We use the derivative of the oil percentage function to identify the <strong>Peak Accumulation Phase</strong>.</p>
 
-    <div class="formula-box">
-        <strong>Growth Function:</strong> f(t) = K / (1 + e<sup>-r(t - t₀)</sup>)<br>
-        <strong>Derivative (Rate):</strong> f'(t) = r · f(t) · (1 - f(t)/K)
+    <div class="formula">
+        Oil Content f(t) = L / (1 + e<sup>-k(t - t₀)</sup>) <br>
+        Synthesis Rate f'(t) = (k · L · e<sup>-k(t - t₀)</sup>) / (1 + e<sup>-k(t - t₀)</sup>)²
     </div>
 
-    <canvas id="growthChart" width="800" height="400"></canvas>
+    <canvas id="oilChart" width="800" height="380"></canvas>
 
-    <div id="info-panel">
-        <h3 id="panel-title">Analysis at Day X</h3>
-        <p id="panel-desc"></p>
+    <div id="analysis-box">
+        <strong>Interactive Analysis:</strong> Click any point on the curve to calculate the Synthesis Rate at that week of development.
     </div>
 
-    <p class="source-link">
-        Data Model based on: <em>Malaysian Journal of Animal Science & Department of Veterinary Services (DVS) Malaysia Broiler Performance Standards.</em>
-    </p>
+    <p class="meta">Data Reference: MPOB (Malaysian Palm Oil Board) Physiological Ripening Standards for <em>Elaeis guineensis</em>.</p>
 </div>
 
 <script>
-    // Logistic Parameters for a standard Malaysian Broiler (42-day cycle)
-    const K = 2800;  // Carrying capacity (Target slaughter weight in grams)
-    const r = 0.18;  // Growth rate coefficient
-    const t0 = 24;   // Mid-point (Inflection point in days)
+    const L = 50;      // Max oil content (%)
+    const k = 0.65;    // Steepness of accumulation
+    const t0 = 14;     // Mid-point of ripening (weeks after anthesis)
 
-    // Generate Data
-    const days = Array.from({length: 43}, (_, i) => i);
-    const weightData = days.map(t => K / (1 + Math.exp(-r * (t - t0))));
-    const growthRateData = days.map(t => {
-        const wt = K / (1 + Math.exp(-r * (t - t0)));
-        return r * wt * (1 - wt / K);
+    const weeks = Array.from({length: 21}, (_, i) => i);
+    const oilData = weeks.map(t => L / (1 + Math.exp(-k * (t - t0))));
+    const rateData = weeks.map(t => {
+        const expTerm = Math.exp(-k * (t - t0));
+        return (k * L * expTerm) / Math.pow(1 + expTerm, 2);
     });
 
-    const ctx = document.getElementById('growthChart').getContext('2d');
-    const chart = new Chart(ctx, {
+    const ctx = document.getElementById('oilChart').getContext('2d');
+    const oilChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: days,
-            datasets: [
-                {
-                    label: 'Cumulative Weight f(t) [grams]',
-                    data: weightData,
-                    borderColor: '#2e7d32',
-                    backgroundColor: 'rgba(46, 125, 50, 0.1)',
-                    yAxisID: 'y',
-                    fill: true,
-                    tension: 0.4
-                },
-                {
-                    label: 'Growth Rate f\'(t) [g/day]',
-                    data: growthRateData,
-                    borderColor: '#f57c00',
-                    borderDash: [5, 5],
-                    yAxisID: 'y1',
-                    tension: 0.4
-                }
-            ]
+            labels: weeks,
+            datasets: [{
+                label: 'Oil Content f(t) [%]',
+                data: oilData,
+                borderColor: '#2e7d32',
+                backgroundColor: 'rgba(46, 125, 50, 0.1)',
+                fill: true,
+                yAxisID: 'y'
+            }, {
+                label: 'Synthesis Rate f\'(t) [%/week]',
+                data: rateData,
+                borderColor: '#fb8c00',
+                borderDash: [5, 5],
+                yAxisID: 'y1'
+            }]
         },
         options: {
-            responsive: true,
-            interaction: { mode: 'index', intersect: false },
             scales: {
-                y: { type: 'linear', position: 'left', title: { display: true, text: 'Weight (g)' } },
-                y1: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Growth Rate (g/day)' } },
-                x: { title: { display: true, text: 'Days Since Hatch' } }
-            },
-            plugins: {
-                tooltip: { enabled: true }
+                y: { title: { display: true, text: 'Oil Content (%)' } },
+                y1: { position: 'right', title: { display: true, text: 'Accumulation Rate (%/wk)' } },
+                x: { title: { display: true, text: 'Weeks After Anthesis (WAA)' } }
             },
             onClick: (e) => {
-                const points = chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, true);
+                const points = oilChart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, true);
                 if (points.length) {
-                    const index = points[0].index;
-                    const day = days[index];
-                    const weight = weightData[index].toFixed(2);
-                    const rate = growthRateData[index].toFixed(2);
-                    
-                    updatePanel(day, weight, rate);
+                    const idx = points[0].index;
+                    const w = weeks[idx];
+                    const val = oilData[idx].toFixed(2);
+                    const rate = rateData[idx].toFixed(2);
+                    showAnalysis(w, val, rate);
                 }
             }
         }
     });
 
-    function updatePanel(day, weight, rate) {
-        const panel = document.getElementById('info-panel');
-        const title = document.getElementById('panel-title');
-        const desc = document.getElementById('panel-desc');
+    function showAnalysis(w, val, rate) {
+        const box = document.getElementById('analysis-box');
+        let insight = "";
+        if (w < 12) insight = "Pre-synthesis: The bunch is mostly building moisture and fiber. Very low oil accumulation.";
+        else if (w >= 13 && w <= 16) insight = "CRITICAL PHASE: Rapid oil synthesis. The derivative is peaking. Any water stress now severely impacts final yield.";
+        else insight = "Ripening/Loose Fruit Stage: Oil content is plateuing. High derivative here indicates the fruit is ready for harvest.";
         
-        panel.style.display = 'block';
-        title.innerText = `Day ${day}: Growth Dynamics`;
-        
-        let explanation = "";
-        if (day < 15) {
-            explanation = "Early Phase: The bird is building its skeletal framework. The growth rate f'(t) is increasing exponentially.";
-        } else if (day >= 22 && day <= 26) {
-            explanation = "Peak Efficiency: This is the inflection point. The derivative is at its maximum! The bird is converting feed to muscle at the highest possible rate.";
-        } else {
-            explanation = "Maturation Phase: The growth rate f'(t) is declining. The bird is reaching slaughter weight, and each extra gram of gain requires more feed (Lower FCR).";
-        }
-
-        desc.innerHTML = `<strong>Weight:</strong> ${weight}g <br> 
-                          <strong>Rate of Change [f'(t)]:</strong> ${rate} g/day <br><br>
-                          <em>Insight: ${explanation}</em>`;
+        box.innerHTML = `<strong>Week ${w}:</strong> Current Oil: ${val}% | <strong>Synthesis Rate: ${rate}% per week.</strong><br><br>
+                         <em>Layman Explanation:</em> ${insight}`;
     }
 </script>
-
 </body>
 </html>
